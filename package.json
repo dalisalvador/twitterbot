@@ -1,0 +1,23 @@
+{
+  "name": "daliweb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dalisalvador/twitterbot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dalisalvador/twitterbot/issues"
+  },
+  "homepage": "https://github.com/dalisalvador/twitterbot#readme",
+  "dependencies": {
+    "twit": "^2.2.11"
+  }
+}
