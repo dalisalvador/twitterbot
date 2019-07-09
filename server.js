@@ -70,6 +70,7 @@ async function go() {
 
   //set interval to keep awake
   keepAwake();
+  favs("#art", 10000);
 
   while (1) {
     // while (1) {
@@ -82,10 +83,11 @@ async function go() {
     artworks = await getRandomArtworks(500);
     let artworkData = await getArtworkData(artworks);
     artist = await getArtistFromArtwork(artworkData.id);
+
     if (artist[0] != undefined) {
       artworkData.artist = artist[0].name;
       await tweetArtwork(artworkData);
-      await waiting(1800000);
+      await waiting(60000);
     }
 
     // if (!artistsArr.includes(artist.name)) {
@@ -98,6 +100,18 @@ async function go() {
     //   await waiting(60000);
     // }
   }
+}
+
+async function favs(track, ms) {
+  var stream = client.stream("statuses/filter", { track });
+  stream.on("tweet", async function(tweet) {
+    console.log("Waiting to Fav");
+    await waiting(ms);
+    client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
+      if (err) console.log(err);
+      else console.log("Faved");
+    });
+  });
 }
 
 async function tweetArtwork(artworkData) {
