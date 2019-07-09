@@ -2,7 +2,6 @@ const Twitter = require("twit");
 const config = require("./config.js");
 const fs = require("fs");
 const client = new Twitter(config);
-const titles = require("./descriptions/workAndDesc.js");
 const artists = require("./artistis/artists");
 const axios = require("axios");
 const traverson = require("traverson");
@@ -58,8 +57,8 @@ async function go() {
       let artworkData = await getArtworkData(artistArtworks);
       artworkData.artist = artist.name;
       await tweetArtwork(artworkData);
-      // await waiting(900000);
-      await waiting(60000);
+      await waiting(900000);
+      //await waiting(60000);
     }
   }
 }
