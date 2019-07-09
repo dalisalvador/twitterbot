@@ -67,6 +67,10 @@ async function go() {
   let artist;
   let artistArtworks = [];
   let artistsArr = [];
+
+  //set interval to keep awake
+  keepAwake();
+
   while (1) {
     while (1) {
       artist = await artistDuJour();
@@ -130,7 +134,7 @@ async function tweetArtwork(artworkData) {
 
           client.post("statuses/update", params, function(err, data, response) {
             if (!err) {
-              console.log("Random Artwork twitted!");
+              console.log("Radom Artwork twitted!");
               fs.unlinkSync(artworkData.image);
               resolve();
             } else reject(err);
@@ -277,6 +281,12 @@ async function getArtist(id) {
           });
       });
   });
+
+  function keepAwake() {
+    setInterval(function() {
+      axios.get("http://daliweb.herokuapp.com");
+    }, 60000); // every 5 minutes (300000)
+  }
 
   return await promise;
 }
