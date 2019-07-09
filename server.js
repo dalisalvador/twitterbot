@@ -87,7 +87,7 @@ async function go() {
     if (artist[0] != undefined) {
       artworkData.artist = artist[0].name;
       await tweetArtwork(artworkData);
-      await waiting(60000);
+      await waiting(1800000);
     }
 
     // if (!artistsArr.includes(artist.name)) {
