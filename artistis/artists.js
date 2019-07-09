@@ -20,8 +20,7 @@ const artists = [
   "edouard-manet",
   "edvard-munch",
   "piero-della-francesca",
-  "masaccio",
-  "Gustave Courbet"
+  "masaccio"
 ];
 
 module.exports = artists;
