@@ -74,7 +74,6 @@ async function go() {
       if (artistArtworks.length >= 1) break;
     }
 
-    console.log(`Artwords from ${artist.name} found!`);
     if (!artistsArr.includes(artist.name)) {
       if (artistsArr.length >= 10) artistsArr = [];
       artistsArr.push(artist.name);
@@ -131,7 +130,7 @@ async function tweetArtwork(artworkData) {
 
           client.post("statuses/update", params, function(err, data, response) {
             if (!err) {
-              console.log("twitted!");
+              console.log("Random Artwork twitted!");
               fs.unlinkSync(artworkData.image);
               resolve();
             } else reject(err);
@@ -169,7 +168,6 @@ function covertToHashTag(text) {
 }
 
 async function getArtworkData(artworks) {
-  console.log("Getting Artwork Data..");
   let artwork = artworks[Math.floor(Math.random() * artworks.length)];
   let imageVersion,
     image = "";
@@ -188,7 +186,6 @@ async function getArtworkData(artworks) {
     image = artwork._links.image.href;
     image = image.replace("{image_version}", imageVersion);
     image = await imgeUrl2File(image);
-    console.log("Returning Data, ready to twit.");
     return {
       title: artwork.title,
       category: artwork.category,
@@ -208,14 +205,12 @@ async function imgeUrl2File(url) {
       url,
       responseType: "stream"
     }).then(response => {
-      console.log("Saving Image");
       response.data
         .pipe(fs.createWriteStream(PATH))
         .on("finish", () => resolve(PATH))
         .on("error", e => reject(e));
     });
   });
-  console.log("Image saved. Returning");
   return await promise;
 }
 
