@@ -52,11 +52,12 @@ async function go() {
     }
 
     if (!artistsArr.includes(artist.name)) {
-      if (artistsArr.length >= 10) artistsArr = [];
-      artistsArr.push(artist.name);
-      let artworkData = await getArtworkData(artistArtworks);
-      artworkData.artist = artist.name;
-      await tweetArtwork(artworkData);
+      console.log("testing...");
+      // if (artistsArr.length >= 10) artistsArr = [];
+      // artistsArr.push(artist.name);
+      // let artworkData = await getArtworkData(artistArtworks);
+      // artworkData.artist = artist.name;
+      // await tweetArtwork(artworkData);
       await waiting(900000);
       //await waiting(60000);
     }
