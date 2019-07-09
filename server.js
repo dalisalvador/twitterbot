@@ -81,8 +81,8 @@ async function go() {
       let artworkData = await getArtworkData(artistArtworks);
       artworkData.artist = artist.name;
       await tweetArtwork(artworkData);
-      //   await waiting(900000);
-      await waiting(60000);
+      await waiting(900000);
+      //await waiting(60000);
     }
   }
 }
@@ -114,14 +114,18 @@ async function tweetArtwork(artworkData) {
         if (err) console.log(err);
         if (!err) {
           // now we can reference the media and post a tweet (media will attach to the tweet)
+          let medium = artworkData.medium
+            ? `Medium: ${artworkData.medium}`
+            : "";
+          let category = artworkData.category
+            ? `Category: ${artworkData.category}`
+            : "";
           var params = {
             status: `${artworkData.title}, by ${artworkData.artist} (${
               artworkData.date
-            }).\nMedium: ${artworkData.medium}\nCategory: ${
-              artworkData.category
-            }\n#${covertToHashTag(artworkData.artist)} #${covertToHashTag(
-              artworkData.medium
-            )} #iLoveArt`,
+            }).\n${medium}\n${category}\n${covertToHashTag(
+              artworkData.artist
+            )} ${covertToHashTag(artworkData.medium)} #iLoveArt`,
             media_ids: [mediaIdStr]
           };
 
@@ -159,7 +163,9 @@ function covertToHashTag(text) {
       ""
     );
   });
-  return words.join("");
+  if (words.length > 0) {
+    return "#" + words.join("");
+  }
 }
 
 async function getArtworkData(artworks) {
