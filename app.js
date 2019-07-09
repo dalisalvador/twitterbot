@@ -53,8 +53,9 @@ async function go() {
 
     if (!artistsArr.includes(artist.name)) {
       console.log("testing...");
-      // if (artistsArr.length >= 10) artistsArr = [];
-      // artistsArr.push(artist.name);
+      if (artistsArr.length >= 10) artistsArr = [];
+      artistsArr.push(artist.name);
+      console.log("");
       // let artworkData = await getArtworkData(artistArtworks);
       // artworkData.artist = artist.name;
       // await tweetArtwork(artworkData);
@@ -250,5 +251,3 @@ async function getArtist(id) {
 
   return await promise;
 }
-
-go();
