@@ -167,7 +167,7 @@ async function getArtworkData(artworks) {
 
 async function imgeUrl2File(url) {
   const localname = `tempImage-${Date.now()}`;
-  const PATH = path.join(__dirname, `./temp/${localname}.jpg`);
+  const PATH = `./temp/${localname}.jpg`;
 
   let promise = new Promise((resolve, reject) => {
     axios({
