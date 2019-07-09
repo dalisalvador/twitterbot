@@ -99,6 +99,7 @@ async function tweetArtwork(artworkData) {
       data,
       response
     ) {
+      if (err) console.log(err);
       // now we can assign alt text to the media, for use by screen readers and
       // other text-based presentations and interpreters
       var mediaIdStr = data.media_id_string;
@@ -110,6 +111,7 @@ async function tweetArtwork(artworkData) {
         data,
         response
       ) {
+        if (err) console.log(err);
         if (!err) {
           // now we can reference the media and post a tweet (media will attach to the tweet)
           var params = {
