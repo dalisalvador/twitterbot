@@ -167,10 +167,6 @@ async function getArtworkData(artworks) {
 
 async function imgeUrl2File(url) {
   const localname = `tempImage-${Date.now()}`;
-  const temp_dir = path.join(process.cwd(), "temp/");
-
-  if (!fs.existsSync(temp_dir)) fs.mkdirSync(temp_dir);
-
   const PATH = `./temp/${localname}.jpg`;
 
   let promise = new Promise((resolve, reject) => {
