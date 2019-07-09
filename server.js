@@ -72,21 +72,31 @@ async function go() {
   keepAwake();
 
   while (1) {
-    while (1) {
-      artist = await artistDuJour();
-      artistArtworks = await artworks(artist.id);
-      if (artistArtworks.length >= 1) break;
+    // while (1) {
+    //   artist = await artistDuJour();
+    //   artistArtworks = await artworks(artist.id);
+    //   console.log(`artWork of ${artist.name} :`, artistArtworks);
+    //   if (artistArtworks.length >= 1) break;
+    // }
+
+    artworks = await getRandomArtworks(500);
+    let artworkData = await getArtworkData(artworks);
+    artist = await getArtistFromArtwork(artworkData.id);
+    if (artist[0] != undefined) {
+      artworkData.artist = artist[0].name;
+      await tweetArtwork(artworkData);
+      await waiting(1800000);
     }
 
-    if (!artistsArr.includes(artist.name)) {
-      if (artistsArr.length >= 10) artistsArr = [];
-      artistsArr.push(artist.name);
-      let artworkData = await getArtworkData(artistArtworks);
-      artworkData.artist = artist.name;
-      await tweetArtwork(artworkData);
-      await waiting(900000);
-      //await waiting(60000);
-    }
+    // if (!artistsArr.includes(artist.name)) {
+    //   if (artistsArr.length >= 10) artistsArr = [];
+    //   artistsArr.push(artist.name);
+    //   let artworkData = await getArtworkData(artistArtworks);
+    //   artworkData.artist = artist.name;
+    //   await tweetArtwork(artworkData);
+    //   //await waiting(900000);
+    //   await waiting(60000);
+    // }
   }
 }
 
@@ -126,7 +136,7 @@ async function tweetArtwork(artworkData) {
           var params = {
             status: `${artworkData.title}, by ${artworkData.artist} (${
               artworkData.date
-            }).\n${medium}\n${category}\n${covertToHashTag(
+            }).\n${medium}\n${category}\n#art ${covertToHashTag(
               artworkData.artist
             )} ${covertToHashTag(artworkData.medium)} #iLoveArt`,
             media_ids: [mediaIdStr]
@@ -159,16 +169,48 @@ async function waiting(ms) {
 }
 
 function covertToHashTag(text) {
-  let words = text.split(" ");
-  words.map((word, index) => {
-    words[index] = (word.charAt(0).toUpperCase() + word.slice(1)).replace(
-      /[^0-9a-z]/gi,
-      ""
-    );
+  if (text) {
+    let words = text.split(" ");
+    words.map((word, index) => {
+      words[index] = (word.charAt(0).toUpperCase() + word.slice(1)).replace(
+        /[^0-9a-z]/gi,
+        ""
+      );
+    });
+    if (words.length > 0) {
+      return "#" + words.join("");
+    }
+  } else return "";
+}
+async function getArtistFromArtwork(artwork_id) {
+  let promise = new Promise((resolve, reject) => {
+    axios
+      .post(apiUrl, { client_id: clientID, client_secret: clientSecret })
+      .then(res => {
+        traverson.registerMediaType(JsonHalAdapter.mediaType, JsonHalAdapter);
+        let api = traverson.from("https://api.artsy.net/api").jsonHal();
+        api
+          .newRequest()
+          .follow("artists")
+          .withRequestOptions({
+            headers: {
+              "X-Xapp-Token": res.data.token,
+              Accept: "application/vnd.artsy-v2+json"
+            }
+          })
+          .withTemplateParameters({ artwork_id })
+          .getResource(function(error, res) {
+            if (error) {
+              reject(error);
+            }
+            if (res) {
+              resolve(res._embedded.artists);
+            }
+          });
+      });
   });
-  if (words.length > 0) {
-    return "#" + words.join("");
-  }
+
+  return await promise;
 }
 
 async function getArtworkData(artworks) {
@@ -191,6 +233,7 @@ async function getArtworkData(artworks) {
     image = image.replace("{image_version}", imageVersion);
     image = await imgeUrl2File(image);
     return {
+      id: artwork.id,
       title: artwork.title,
       category: artwork.category,
       medium: artwork.medium,
@@ -219,8 +262,71 @@ async function imgeUrl2File(url) {
 }
 
 async function artistDuJour() {
-  let artistId = artists[Math.floor(Math.random() * artists.length)];
-  return await getArtist(artistId);
+  let randomArtists = await getRandomArtist(100);
+  let artist = randomArtists[Math.floor(Math.random() * randomArtists.length)];
+  return artist;
+  //let artistId = artists[Math.floor(Math.random() * artists.length)];
+  //return await getArtist(artistId);
+}
+async function getRandomArtworks(size) {
+  let promise = new Promise((resolve, reject) => {
+    axios
+      .post(apiUrl, { client_id: clientID, client_secret: clientSecret })
+      .then(res => {
+        traverson.registerMediaType(JsonHalAdapter.mediaType, JsonHalAdapter);
+        let api = traverson.from("https://api.artsy.net/api").jsonHal();
+        api
+          .newRequest()
+          .follow("artworks")
+          .withRequestOptions({
+            headers: {
+              "X-Xapp-Token": res.data.token,
+              Accept: "application/vnd.artsy-v2+json"
+            }
+          })
+          .withTemplateParameters({ size, page: 1 })
+          .getResource(function(error, res) {
+            if (error) {
+              reject(error);
+            }
+            if (res) {
+              resolve(res._embedded.artworks);
+            }
+          });
+      });
+  });
+
+  return await promise;
+}
+async function getRandomArtist(size) {
+  let promise = new Promise((resolve, reject) => {
+    axios
+      .post(apiUrl, { client_id: clientID, client_secret: clientSecret })
+      .then(res => {
+        traverson.registerMediaType(JsonHalAdapter.mediaType, JsonHalAdapter);
+        let api = traverson.from("https://api.artsy.net/api").jsonHal();
+        api
+          .newRequest()
+          .follow("artists")
+          .withRequestOptions({
+            headers: {
+              "X-Xapp-Token": res.data.token,
+              Accept: "application/vnd.artsy-v2+json"
+            }
+          })
+          .withTemplateParameters({ size, sort: "-trending", page: 1 })
+          .getResource(function(error, res) {
+            if (error) {
+              reject(error);
+            }
+            if (res) {
+              resolve(res._embedded.artists);
+            }
+          });
+      });
+  });
+
+  return await promise;
 }
 
 async function artworks(artist_id) {
