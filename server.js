@@ -3,7 +3,7 @@ var app = express();
 const Twitter = require("twit");
 const config = require("./config.js");
 const fs = require("fs");
-//const client = new Twitter(config);
+const client = new Twitter(config);
 const artists = require("./artistis/artists");
 
 const axios = require("axios");
