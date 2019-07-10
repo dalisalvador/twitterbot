@@ -65,17 +65,27 @@ async function getTwits(twits, query, limit) {
 }
 
 async function go() {
-  let favCount = 0;
+  let favCount = 0,
+    commentCount = 0;
   let artist;
   let artistArtworks = [];
   let artistsArr = [];
+  let flagComment = false;
+  keepAwake();
+
+  var stream = client.stream("statuses/filter", {
+    track:
+      "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio"
+  });
+
+  stream.on("tweet", async function(tweet) {
+    favCount = await favs(tweet, favCount);
+    commentCount = await comment(tweet, " bravo!", 5, 10, 0, commentCount);
+  });
 
   //set interval to keep awake
-  keepAwake();
-  favs(
-    "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio",
-    10000
-  );
+
+  // Search filter, min retwitts, min likes, interval
 
   while (1) {
     // while (1) {
@@ -107,19 +117,48 @@ async function go() {
   }
 }
 
-async function favs(track, ms) {
-  let favCount = 0;
-  var stream = client.stream("statuses/filter", { track });
-  stream.on("tweet", async function(tweet) {
-    // console.log("Waiting to Fav");
-    // await waiting(ms);
+async function favs(tweet, favCount) {
+  let promise = new Promise((resolve, reject) => {
     client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
-      if (err) console.log(err);
+      if (err) reject(err);
       else {
         console.log("Fav count: ", favCount++);
+        resolve(favCount);
       }
     });
   });
+
+  return await promise;
+}
+
+async function comment(tweet, response, minRet, minFav, minRep, commentCount) {
+  if (
+    tweet.retweet_count >= minRet &&
+    tweet.favorite_count >= minFav &&
+    tweet.reply_count >= minRep
+  ) {
+    let promise = new Promise((resolve, reject) => {
+      client.post(
+        "statuses/update",
+        {
+          in_reply_to_status_id: tweet.id_str,
+          status: "@" + tweet.user.screen_name + ` ${response}`
+        },
+
+        (err, res) => {
+          if (err) reject(err);
+          else {
+            console.log("Comment count: ", commentCount++);
+            resolve(commentCount);
+          }
+        }
+      );
+      flag = true;
+    });
+    return await promise;
+  } else {
+    return commentCount;
+  }
 }
 
 async function tweetArtwork(artworkData) {
