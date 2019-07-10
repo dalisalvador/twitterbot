@@ -30,7 +30,7 @@ app.use(bodyParser.json());
 
 const userActivityWebhook = twitterWebhooks.userActivity({
   serverUrl: "https://daliweb.herokuapp.com/",
-  route: "/", //default : '/'
+  route: "https://daliweb.herokuapp.com/callbacks/test", //default : '/'
   consumerKey: "faTuC9hQ8lgTwMUh7dCyVmwQB",
   consumerSecret: "U3W6Vq0KHnC8BDK2HRMftZvfikHJRUSQ1U5XAWGBASZl3laUqQ",
   accessToken: "1147107023907106817-Zvbb8T8rpzHw5znO4SaLz8f3fJT60c",
