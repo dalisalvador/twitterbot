@@ -23,7 +23,7 @@ const clientID = "79abbea909cf4325223a",
 
 // set the port of our application
 // process.env.PORT lets the port be set by Heroku
-// var port = process.env.PORT || 8080;
+var port = process.env.PORT || 8080;
 
 // /* WebHooks */
 app.use(bodyParser.json());
