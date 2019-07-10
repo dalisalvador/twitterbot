@@ -33,7 +33,7 @@ app.get("/", function(req, res) {
 
 app.listen(port, function() {
   console.log("Our app is running on http://localhost:" + port);
-  //go();
+  go();
 });
 
 async function getTwits(twits, query, limit) {
