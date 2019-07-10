@@ -70,7 +70,10 @@ async function go() {
 
   //set interval to keep awake
   keepAwake();
-  favs("#art", 10000);
+  favs(
+    "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio",
+    10000
+  );
 
   while (1) {
     // while (1) {
@@ -87,7 +90,7 @@ async function go() {
     if (artist[0] != undefined) {
       artworkData.artist = artist[0].name;
       await tweetArtwork(artworkData);
-      await waiting(1800000);
+      await waiting(180000);
     }
 
     // if (!artistsArr.includes(artist.name)) {
