@@ -8,6 +8,7 @@ const artists = require("./artistis/artists");
 const axios = require("axios");
 const traverson = require("traverson");
 const JsonHalAdapter = require("traverson-hal");
+const moment = require("moment");
 const path = require("path"); // part of Node, no npm install needed
 
 const clientID = "79abbea909cf4325223a",
@@ -38,8 +39,9 @@ app.listen(port, function() {
 async function getTwits(twits, query, limit) {
   return await new Promise((resolve, reject) => {
     client.get("search/tweets", query, async function(err, data, response) {
-      if (err) reject(err);
-      else {
+      if (err) {
+        reject(err);
+      } else {
         data.statuses.map(x => {
           if (twits.length < limit) twits.push(x);
         });
@@ -65,99 +67,138 @@ async function getTwits(twits, query, limit) {
 
 async function go() {
   let favCount = 0,
-    commentCount = 0;
+    commentCount = 0,
+    retweetCount = 0;
   let artist;
   let artistArtworks = [];
   let artistsArr = [];
   let flagComment = false;
+  let track =
+    "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio";
+
   keepAwake();
 
-  var stream = client.stream("statuses/filter", {
-    track:
-      "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio"
+  let twits = [];
+  let twitsFound = {
+    retweet: [],
+    comment: [],
+    favorite: []
+  };
+
+  let now = moment()
+    .subtract(2, "hours")
+    .format("YYYY-MM-DD");
+  let past = moment()
+    .subtract(5, "days")
+    .format("YYYY-MM-DD");
+
+  let query = {
+    q: `#art since:${past} until:${now}`,
+    count: 100,
+    lang: "en"
+  };
+
+  await getTwits(twits, query, 100);
+  twits.map(twit => {
+    if (twit.favorite_count >= 100 && twit.retweet_count >= 20)
+      twitsFound.retweet.push(twit);
+    else if (twit.favorite_count >= 30 && twit.retweet_count >= 2)
+      twitsFound.comment.push(twit);
+    else if (twit.favorite_count >= 15 && twit.retweet_count >= 0)
+      twitsFound.favorite.push(twit);
   });
 
-  stream.on("tweet", async function(tweet) {
-    favCount = await favs(tweet, favCount);
-    commentCount = await comment(tweet, " bravo!", 5, 10, 0, commentCount);
-  });
+  //retweet(twitsFound.retweet, retweetCount);
+  comment(twitsFound.comment, commentCount);
+  //fav(twitsFound.favorite, favCount);
 
-  //set interval to keep awake
+  setInterval(async () => {
+    now = moment().format("YYYY-MM-DD");
+    past = moment()
+      .subtract(5, "days")
+      .format("YYYY-MM-DD");
 
-  // Search filter, min retwitts, min likes, interval
+    query = {
+      q: track + ` since:${past} until:${now}`,
+      count: 100,
+      lang: "en"
+    };
+
+    await getTwits(twits, query, 100);
+    twits.map(twit => {
+      if (twit.favorite_count >= 100 && twit.retweet_count >= 20)
+        twitsFound.retweet.push(twit);
+      else if (twit.favorite_count >= 30 && twit.retweet_count >= 2)
+        twitsFound.comment.push(twit);
+      else if (twit.favorite_count >= 15 && twit.retweet_count >= 0)
+        twitsFound.favorite.push(twit);
+    });
+
+    //retweet(twitsFound.retweet, retweetCount);
+    //comment(twitsFound.comment, commentCount);
+    //fav(twitsFound.favorite, favCount);
+  }, 60000);
+  //86400000
 
   while (1) {
-    // while (1) {
-    //   artist = await artistDuJour();
-    //   artistArtworks = await artworks(artist.id);
-    //   console.log(`artWork of ${artist.name} :`, artistArtworks);
-    //   if (artistArtworks.length >= 1) break;
-    // }
-
     artworks = await getRandomArtworks(500);
     let artworkData = await getArtworkData(artworks);
     artist = await getArtistFromArtwork(artworkData.id);
 
     if (artist[0] != undefined) {
       artworkData.artist = artist[0].name;
-      await tweetArtwork(artworkData);
-      await waiting(1800000);
+      //await tweetArtwork(artworkData);
+      await waiting(60, 180); //wait between x and y minutes (random)
     }
-
-    // if (!artistsArr.includes(artist.name)) {
-    //   if (artistsArr.length >= 10) artistsArr = [];
-    //   artistsArr.push(artist.name);
-    //   let artworkData = await getArtworkData(artistArtworks);
-    //   artworkData.artist = artist.name;
-    //   await tweetArtwork(artworkData);
-    //   //await waiting(900000);
-    //   await waiting(60000);
-    // }
   }
 }
 
 async function favs(tweet, favCount) {
   let promise = new Promise((resolve, reject) => {
-    client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
-      if (err) reject(err);
-      else {
-        console.log("Fav count: ", favCount++);
-        resolve(favCount);
-      }
-    });
+    setTimeout(() => {
+      client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
+        if (err) reject(err);
+        else {
+          console.log("Fav count: ", ++favCount);
+          resolve(favCount);
+        }
+      });
+    }, Math.floor(Math.random() * (210 - 90 + 1) + 90) * 1000);
   });
 
   return await promise;
 }
 
-async function comment(tweet, response, minRet, minFav, minRep, commentCount) {
-  if (
-    tweet.retweet_count >= minRet &&
-    tweet.favorite_count >= minFav &&
-    tweet.reply_count >= minRep
-  ) {
-    let promise = new Promise((resolve, reject) => {
+async function comment(twits, commentCount) {
+  let commentsArr = ["bravo!", "awesome!", "fantastic!", "magnificent!"];
+  let comment = commentsArr[Math.floor(Math.random() * commentsArr.length)];
+
+  await twits.map(async twit => {
+    return await new Promise((resolve, reject) => {
       client.post(
         "statuses/update",
         {
-          in_reply_to_status_id: tweet.id_str,
-          status: "@" + tweet.user.screen_name + ` ${response}`
+          in_reply_to_status_id: twit.id_str,
+          status: "@" + twit.user.screen_name + ` ${comment}`
         },
 
         (err, res) => {
           if (err) reject(err);
           else {
             console.log("Comment count: ", commentCount++);
-            resolve(commentCount);
+            resolve();
           }
         }
       );
-      flag = true;
     });
-    return await promise;
-  } else {
-    return commentCount;
-  }
+  });
+}
+
+function getMaxId(next_results) {
+  let maxIdStart = next_results.indexOf("max_id=") + 7;
+  let endOfId = next_results.indexOf("&", maxIdStart);
+  let id = next_results.slice(maxIdStart, endOfId);
+  return id;
 }
 
 async function tweetArtwork(artworkData) {
@@ -217,8 +258,10 @@ async function tweetArtwork(artworkData) {
   return await promise;
 }
 
-async function waiting(ms) {
-  console.log("waiting...");
+async function waiting(min, max) {
+  let randomBetween = Math.floor(Math.random() * (max - min + 1) + min);
+  let ms = randomBetween * 60 * 1000;
+  console.log(`Waiting ${randomBetween} minutes before another post.`);
   let promise = new Promise((resolve, reject) => {
     setTimeout(() => {
       resolve();
