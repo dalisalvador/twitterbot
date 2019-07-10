@@ -5,7 +5,6 @@ const config = require("./config.js");
 const fs = require("fs");
 const client = new Twitter(config);
 const artists = require("./artistis/artists");
-
 const axios = require("axios");
 const traverson = require("traverson");
 const JsonHalAdapter = require("traverson-hal");
