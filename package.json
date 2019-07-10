@@ -23,6 +23,7 @@
     "express": "~4.9.8",
     "traverson": "^6.1.1",
     "traverson-hal": "^6.1.0",
-    "twit": "^2.2.11"
+    "twit": "^2.2.11",
+    "twitter-webhooks": "^0.3.0"
   }
 }

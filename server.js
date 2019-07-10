@@ -1,9 +1,15 @@
 var express = require("express");
+/////// WebHooks //////////
+const bodyParser = require("body-parser");
+const twitterWebhooks = require("twitter-webhooks");
+const https = require("https");
+/**************************/
+
 var app = express();
 const Twitter = require("twit");
 const config = require("./config.js");
 const fs = require("fs");
-const client = new Twitter(config);
+//const client = new Twitter(config);
 const artists = require("./artistis/artists");
 
 const axios = require("axios");
@@ -11,78 +17,70 @@ const traverson = require("traverson");
 const JsonHalAdapter = require("traverson-hal");
 const path = require("path"); // part of Node, no npm install needed
 
-/////// WebHooks //////////
-// const bodyParser = require("body-parser");
-// const twitterWebhooks = require("twitter-webhooks");
-// const https = require("https");
-/**************************/
-
 const clientID = "79abbea909cf4325223a",
   clientSecret = "f5502e776272b06294deb49206c3d743",
   apiUrl = "https://api.artsy.net/api/tokens/xapp_token";
 
 // set the port of our application
 // process.env.PORT lets the port be set by Heroku
-var port = process.env.PORT || 8080;
+// var port = process.env.PORT || 8080;
 
 // /* WebHooks */
-// app.use(bodyParser.json());
+app.use(bodyParser.json());
 
-// const userActivityWebhook = twitterWebhooks.userActivity({
-//   serverUrl: "https://daliweb.herokuapp.com/",
-//   //route: "/your/webhook/route", //default : '/'
-//   consumerKey: "faTuC9hQ8lgTwMUh7dCyVmwQB",
-//   consumerSecret: "U3W6Vq0KHnC8BDK2HRMftZvfikHJRUSQ1U5XAWGBASZl3laUqQ",
-//   accessToken: "1147107023907106817-Zvbb8T8rpzHw5znO4SaLz8f3fJT60c",
-//   accessTokenSecret: "LUE4zfZMktvIEGh8SXnm65a8bTfPV2pmwlNHGUUVGzMJw",
-//   //environment: "[your-env]", //default : 'env-beta'
-//   app
-// });
+const userActivityWebhook = twitterWebhooks.userActivity({
+  serverUrl: "https://daliweb.herokuapp.com/",
+  route: "/", //default : '/'
+  consumerKey: "faTuC9hQ8lgTwMUh7dCyVmwQB",
+  consumerSecret: "U3W6Vq0KHnC8BDK2HRMftZvfikHJRUSQ1U5XAWGBASZl3laUqQ",
+  accessToken: "1147107023907106817-Zvbb8T8rpzHw5znO4SaLz8f3fJT60c",
+  accessTokenSecret: "LUE4zfZMktvIEGh8SXnm65a8bTfPV2pmwlNHGUUVGzMJw",
+  environment: "env-beta", //default : 'env-beta'
+  app
+});
 
-// //Register your webhook url - just needed once per URL
-// userActivityWebhook.register();
+//Register your webhook url - just needed once per URL
+userActivityWebhook.register();
 
-// //Subscribe for a particular user activity
-// userActivityWebhook
-//   .subscribe({
-//     userId: "art___you",
-//     accessToken: "1147107023907106817-Zvbb8T8rpzHw5znO4SaLz8f3fJT60c",
-//     accessTokenSecret: "LUE4zfZMktvIEGh8SXnm65a8bTfPV2pmwlNHGUUVGzMJw"
-//   })
-//   .then(function(userActivity) {
-//     userActivity
-//       .on("favorite", data => console.log(userActivity.id + " - favorite"))
-//       .on("tweet_create", data =>
-//         console.log(userActivity.id + " - tweet_create")
-//       )
-//       .on("follow", data => console.log(userActivity.id + " - follow"))
-//       .on("mute", data => console.log(userActivity.id + " - mute"))
-//       .on("revoke", data => console.log(userActivity.id + " - revoke"))
-//       .on("direct_message", data =>
-//         console.log(userActivity.id + " - direct_message")
-//       )
-//       .on("direct_message_indicate_typing", data =>
-//         console.log(userActivity.id + " - direct_message_indicate_typing")
-//       )
-//       .on("direct_message_mark_read", data =>
-//         console.log(userActivity.id + " - direct_message_mark_read")
-//       )
-//       .on("tweet_delete", data =>
-//         console.log(userActivity.id + " - tweet_delete")
-//       );
-//   });
+// Subscribe for a particular user activity
+userActivityWebhook
+  .subscribe({
+    userId: "art___you",
+    accessToken: "1147107023907106817-Zvbb8T8rpzHw5znO4SaLz8f3fJT60c",
+    accessTokenSecret: "LUE4zfZMktvIEGh8SXnm65a8bTfPV2pmwlNHGUUVGzMJw"
+  })
+  .then(function(userActivity) {
+    userActivity
+      .on("favorite", data => console.log(userActivity.id + " - favorite"))
+      .on("tweet_create", data =>
+        console.log(userActivity.id + " - tweet_create")
+      )
+      .on("follow", data => console.log(userActivity.id + " - follow"))
+      .on("mute", data => console.log(userActivity.id + " - mute"))
+      .on("revoke", data => console.log(userActivity.id + " - revoke"))
+      .on("direct_message", data =>
+        console.log(userActivity.id + " - direct_message")
+      )
+      .on("direct_message_indicate_typing", data =>
+        console.log(userActivity.id + " - direct_message_indicate_typing")
+      )
+      .on("direct_message_mark_read", data =>
+        console.log(userActivity.id + " - direct_message_mark_read")
+      )
+      .on("tweet_delete", data =>
+        console.log(userActivity.id + " - tweet_delete")
+      );
+  });
 
-// //listen to any user activity
-// userActivityWebhook.on("event", (event, userId, data) =>
-//   console.log(userId + " - favorite")
-// );
+//listen to any user activity
+userActivityWebhook.on("event", (event, userId, data) =>
+  console.log(userId + " - favorite")
+);
 
-// //listen to unknown payload (in case of api new features)
-// userActivityWebhook.on("unknown-event", rawData => console.log(rawData));
+//listen to unknown payload (in case of api new features)
+userActivityWebhook.on("unknown-event", rawData => console.log(rawData));
 
-// const server = https.createServer({
-//   ...yourHttpsConfig
-// });
+// const server = https.createServer(options, app);
 
 // server.listen(443);
 
@@ -102,7 +100,7 @@ app.get("/", function(req, res) {
 
 app.listen(port, function() {
   console.log("Our app is running on http://localhost:" + port);
-  go();
+  //go();
 });
 
 async function getTwits(twits, query, limit) {
@@ -134,6 +132,7 @@ async function getTwits(twits, query, limit) {
 }
 
 async function go() {
+  let favCount = 0;
   let artist;
   let artistArtworks = [];
   let artistsArr = [];
@@ -159,7 +158,7 @@ async function go() {
 
     if (artist[0] != undefined) {
       artworkData.artist = artist[0].name;
-      await tweetArtwork(artworkData);
+      //await tweetArtwork(artworkData);
       await waiting(1800000);
     }
 
@@ -176,13 +175,17 @@ async function go() {
 }
 
 async function favs(track, ms) {
+  let favCount = 0;
   var stream = client.stream("statuses/filter", { track });
   stream.on("tweet", async function(tweet) {
-    console.log("Waiting to Fav");
-    await waiting(ms);
+    // console.log("Waiting to Fav");
+    // await waiting(ms);
     client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
       if (err) console.log(err);
-      else console.log("Faved");
+      else {
+        console.log(tweet);
+        console.log("Fav count: ", favCount++);
+      }
     });
   });
 }
