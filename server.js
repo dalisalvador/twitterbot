@@ -116,7 +116,6 @@ async function favs(track, ms) {
     client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
       if (err) console.log(err);
       else {
-        console.log(tweet);
         console.log("Fav count: ", favCount++);
       }
     });
