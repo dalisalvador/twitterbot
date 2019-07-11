@@ -116,9 +116,7 @@ async function findTweets(keyword, limit) {
     comment: [],
     favorite: []
   };
-  let now = moment()
-    .subtract(2, "hours")
-    .format("YYYY-MM-DD");
+  let now = moment().format("YYYY-MM-DD");
   let past = moment()
     .subtract(5, "days")
     .format("YYYY-MM-DD");
