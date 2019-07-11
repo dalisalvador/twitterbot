@@ -85,7 +85,7 @@ async function go() {
   let retweeLimit = 12;
 
   setInterval(()=>{
-    artworks = await getRandomArtworks(500);
+    let artworks = await getRandomArtworks(500);
     let artworkData = await getArtworkData(artworks);
     artist = await getArtistFromArtwork(artworkData.id);
 
