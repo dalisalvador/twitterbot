@@ -78,7 +78,7 @@ async function go() {
   let track =
     "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio";
 
-  //keepAwake();
+  keepAwake();
 
   let commentLimit = 500;
   let favLimit = 1000;
