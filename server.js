@@ -84,30 +84,28 @@ async function go() {
   let favLimit = 1000;
   let retweeLimit = 12;
 
-  setInterval(()=>{
+  setInterval(async () => {
     let artworks = await getRandomArtworks(500);
     let artworkData = await getArtworkData(artworks);
     artist = await getArtistFromArtwork(artworkData.id);
 
-    if (artist[0] != undefined   ) {
+    if (artist[0] != undefined) {
       artworkData.artist = artist[0].name;
       await tweetArtwork(artworkData);
     }
-  }, Math.floor(
-    Math.random() * (10800000 - 3600000 + 1) + 3600000
-  ))
-  
+  }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
+
   //retweet(twitsFound.retweet, retweetCount);
-  while(1){
+  while (1) {
     let twitsFound = await findTweets("#art", 1000);
-    await favorite(
-      twitsFound.favorite,
-      favCount,
-      favLimit,
-      90000,
-      120000
+    await favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
+    await comment(
+      twitsFound.comment,
+      commentedTweets,
+      commentLimit,
+      50000,
+      150000
     );
-    await comment(twitsFound.comment, commentedTweets, commentLimit, 50000, 150000);
   }
 }
 
