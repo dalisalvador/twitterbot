@@ -10,6 +10,7 @@ const traverson = require("traverson");
 const JsonHalAdapter = require("traverson-hal");
 const moment = require("moment");
 const path = require("path"); // part of Node, no npm install needed
+const promiseAllAlways = require("promise-all-always");
 
 const clientID = "79abbea909cf4325223a",
   clientSecret = "f5502e776272b06294deb49206c3d743",
@@ -67,24 +68,56 @@ async function getTwits(twits, query, limit) {
 
 async function go() {
   let favCount = 0,
-    commentCount = 0,
     retweetCount = 0;
   let artist;
+  let commentedTweets = [];
+  ("Array of commented tweets");
   let artistArtworks = [];
   let artistsArr = [];
   let flagComment = false;
   let track =
     "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio";
 
-  keepAwake();
+  //keepAwake();
 
+  let commentLimit = 500;
+  let favLimit = 1000;
+  let retweeLimit = 12;
+
+  setInterval(()=>{
+    artworks = await getRandomArtworks(500);
+    let artworkData = await getArtworkData(artworks);
+    artist = await getArtistFromArtwork(artworkData.id);
+
+    if (artist[0] != undefined   ) {
+      artworkData.artist = artist[0].name;
+      await tweetArtwork(artworkData);
+    }
+  }, Math.floor(
+    Math.random() * (10800000 - 3600000 + 1) + 3600000
+  ))
+  
+  //retweet(twitsFound.retweet, retweetCount);
+  while(1){
+    let twitsFound = await findTweets("#art", 1000);
+    await favorite(
+      twitsFound.favorite,
+      favCount,
+      favLimit,
+      90000,
+      120000
+    );
+    await comment(twitsFound.comment, commentedTweets, commentLimit, 50000, 150000);
+  }
+}
+
+async function findTweets(keyword, limit) {
   let twits = [];
   let twitsFound = {
     retweet: [],
     comment: [],
     favorite: []
   };
-
   let now = moment()
     .subtract(2, "hours")
     .format("YYYY-MM-DD");
@@ -93,104 +126,124 @@ async function go() {
     .format("YYYY-MM-DD");
 
   let query = {
-    q: `#art since:${past} until:${now}`,
+    q: `${keyword} since:${past} until:${now}`,
     count: 100,
     lang: "en"
   };
 
-  await getTwits(twits, query, 100);
+  await getTwits(twits, query, limit);
   twits.map(twit => {
-    if (twit.favorite_count >= 100 && twit.retweet_count >= 20)
-      twitsFound.retweet.push(twit);
-    else if (twit.favorite_count >= 30 && twit.retweet_count >= 2)
-      twitsFound.comment.push(twit);
-    else if (twit.favorite_count >= 15 && twit.retweet_count >= 0)
-      twitsFound.favorite.push(twit);
-  });
-
-  //retweet(twitsFound.retweet, retweetCount);
-  comment(twitsFound.comment, commentCount);
-  //fav(twitsFound.favorite, favCount);
-
-  setInterval(async () => {
-    now = moment().format("YYYY-MM-DD");
-    past = moment()
-      .subtract(5, "days")
-      .format("YYYY-MM-DD");
-
-    query = {
-      q: track + ` since:${past} until:${now}`,
-      count: 100,
-      lang: "en"
-    };
-
-    await getTwits(twits, query, 100);
-    twits.map(twit => {
+    if (twit.retweeted_status == undefined) {
+      //It's not a RT
       if (twit.favorite_count >= 100 && twit.retweet_count >= 20)
         twitsFound.retweet.push(twit);
       else if (twit.favorite_count >= 30 && twit.retweet_count >= 2)
         twitsFound.comment.push(twit);
-      else if (twit.favorite_count >= 15 && twit.retweet_count >= 0)
+      else if (twit.favorite_count >= 2 && twit.retweet_count >= 0)
         twitsFound.favorite.push(twit);
-    });
-
-    //retweet(twitsFound.retweet, retweetCount);
-    //comment(twitsFound.comment, commentCount);
-    //fav(twitsFound.favorite, favCount);
-  }, 60000);
-  //86400000
-
-  while (1) {
-    artworks = await getRandomArtworks(500);
-    let artworkData = await getArtworkData(artworks);
-    artist = await getArtistFromArtwork(artworkData.id);
-
-    if (artist[0] != undefined) {
-      artworkData.artist = artist[0].name;
-      //await tweetArtwork(artworkData);
-      await waiting(60, 180); //wait between x and y minutes (random)
+    } else {
+      //It's a RT
+      if (
+        twit.retweeted_status.favorite_count >= 100 &&
+        twit.retweeted_status.retweet_count >= 20
+      )
+        twitsFound.retweet.push(twit.retweeted_status);
+      else if (
+        twit.retweeted_status.favorite_count >= 30 &&
+        twit.retweeted_status.retweet_count >= 2
+      )
+        twitsFound.comment.push(twit.retweeted_status);
+      else if (
+        twit.retweeted_status.favorite_count >= 2 &&
+        twit.retweeted_status.retweet_count >= 0
+      )
+        twitsFound.favorite.push(twit.retweeted_status);
     }
-  }
-}
-
-async function favs(tweet, favCount) {
-  let promise = new Promise((resolve, reject) => {
-    setTimeout(() => {
-      client.post("favorites/create", { id: tweet.id_str }, (err, res) => {
-        if (err) reject(err);
-        else {
-          console.log("Fav count: ", ++favCount);
-          resolve(favCount);
-        }
-      });
-    }, Math.floor(Math.random() * (210 - 90 + 1) + 90) * 1000);
   });
 
-  return await promise;
+  return twitsFound;
 }
 
-async function comment(twits, commentCount) {
-  let commentsArr = ["bravo!", "awesome!", "fantastic!", "magnificent!"];
-  let comment = commentsArr[Math.floor(Math.random() * commentsArr.length)];
+async function favorite(twits, favCount, favLimit, minInterval, maxInterval) {
+  let ms = 0;
+  let promises = twits.map(twit => {
+    return new Promise((resolve, reject) => {
+      ms =
+        ms +
+        Math.floor(
+          Math.random() * (maxInterval - minInterval + 1) + minInterval
+        );
 
-  await twits.map(async twit => {
-    return await new Promise((resolve, reject) => {
-      client.post(
-        "statuses/update",
-        {
-          in_reply_to_status_id: twit.id_str,
-          status: "@" + twit.user.screen_name + ` ${comment}`
-        },
-
-        (err, res) => {
-          if (err) reject(err);
-          else {
-            console.log("Comment count: ", commentCount++);
-            resolve();
-          }
+      return setTimeout(() => {
+        if (favCount >= favLimit) {
+          reject("Error: Fav Limit reached. Skipping");
+        } else {
+          client.post("favorites/create", { id: twit.id_str }, (err, res) => {
+            if (err) reject(err);
+            else {
+              console.log("Fav count: ", ++favCount);
+              resolve(favCount);
+            }
+          });
         }
-      );
+      }, ms);
     });
+  });
+
+  await promiseAllAlways(promises).then(values => {
+    for (let value of values) {
+      if (!value.isResolved) console.log(`Result: ${value.result}`);
+    }
+  });
+}
+
+async function comment(
+  twits,
+  commentedTweets,
+  commentsLimit,
+  minInterval,
+  maxInterval
+) {
+  let commentsArr = ["bravo!", "awesome!", "fantastic!", "magnificent!"];
+  let comment = "";
+  let ms = 0;
+
+  let promises = twits.map(twit => {
+    return new Promise((resolve, reject) => {
+      comment = commentsArr[Math.floor(Math.random() * commentsArr.length)];
+      ms =
+        ms +
+        Math.floor(
+          Math.random() * (maxInterval - minInterval + 1) + minInterval
+        );
+      return setTimeout(() => {
+        if (commentedTweets.length >= commentsLimit) {
+          reject("Error: Comment Limit reached. Skipping");
+        } else {
+          client.post(
+            "statuses/update",
+            {
+              in_reply_to_status_id: twit.id_str,
+              status: "@" + twit.user.screen_name + ` ${comment}`
+            },
+
+            (err, res) => {
+              if (err) reject(err);
+              else {
+                commentedTweets.push(twit.id_str);
+                resolve("Comment count: " + commentedTweets.length);
+              }
+            }
+          );
+        }
+      }, ms);
+    });
+  });
+
+  await promiseAllAlways(promises).then(values => {
+    for (let value of values) {
+      if (!value.isResolved) console.log(`Result: ${value.result}`);
+    }
   });
 }
 
