@@ -98,7 +98,7 @@ async function go() {
   //retweet(twitsFound.retweet, retweetCount);
   while (1) {
     let twitsFound = await findTweets("#art", 1000);
-    await favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
+    favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
     await comment(
       twitsFound.comment,
       commentedTweets,
@@ -215,8 +215,11 @@ async function comment(
           Math.random() * (maxInterval - minInterval + 1) + minInterval
         );
       return setTimeout(() => {
-        if (commentedTweets.length >= commentsLimit) {
-          reject("Error: Comment Limit reached. Skipping");
+        if (
+          commentedTweets.length >= commentsLimit &&
+          commentedTweets.includes(twit.id_str)
+        ) {
+          reject("Error. Skipping comment");
         } else {
           client.post(
             "statuses/update",
