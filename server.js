@@ -11,6 +11,17 @@ const JsonHalAdapter = require("traverson-hal");
 const moment = require("moment");
 const path = require("path"); // part of Node, no npm install needed
 const promiseAllAlways = require("promise-all-always");
+const { google } = require("googleapis");
+const youtubedl = require("youtube-dl");
+
+var TwitterB = require("twitter");
+
+var clientB = new TwitterB({
+  consumer_key: "RhmGMBkQEzWFzwmNV4nVUTFBQ",
+  consumer_secret: "M7Ktu5AHGB3TjIaN4CGNxSAbBbzgWWX2RqY8PSGzuaGIKKaOUK",
+  access_token_key: "1147107023907106817-rxXgpwgA37ewYJ9Kw6secfjF1TU7m2",
+  access_token_secret: "yQRuaLyONTaYeCGSeWNfcbgru9KVeQ2SUnFYadhIU3m6T"
+});
 
 const clientID = "79abbea909cf4325223a",
   clientSecret = "f5502e776272b06294deb49206c3d743",
@@ -78,35 +89,211 @@ async function go() {
   let track =
     "#art, #painting, #paintings, #drawing, #drawings, #andywarhol, #pablopicasso,#banksy,#keithharing,#takashimurakami,#roylichtenstein,#damienhirst,#francisbacon,#aiweiwei,#leonardodavinci,#vincentvangogh,#rembrandtvanrijn,#paolouccello,#paulcezanne,#wassilykandinsky,#claudemonet,#paulgauguin,#vincentvangogh,#edouardmanet,#edvardmunch,#pierodellafrancesca,#masaccio";
 
-  keepAwake();
+  youtube();
 
-  let commentLimit = 500;
-  let favLimit = 1000;
-  let retweeLimit = 12;
+  // keepAwake();
 
-  setInterval(async () => {
-    let artworks = await getRandomArtworks(500);
-    let artworkData = await getArtworkData(artworks);
-    artist = await getArtistFromArtwork(artworkData.id);
+  // let commentLimit = 500;
+  // let favLimit = 1000;
+  // let retweeLimit = 12;
 
-    if (artist[0] != undefined) {
-      artworkData.artist = artist[0].name;
-      await tweetArtwork(artworkData);
+  // setInterval(async () => {
+  //   let artworks = await getRandomArtworks(500);
+  //   let artworkData = await getArtworkData(artworks);
+  //   artist = await getArtistFromArtwork(artworkData.id);
+
+  //   if (artist[0] != undefined) {
+  //     artworkData.artist = artist[0].name;
+  //     await tweetArtwork(artworkData);
+  //   }
+  // }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
+
+  // while (1) {
+  //   let twitsFound = await findTweets("#art", 1000);
+  //   await favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
+  // }
+}
+
+async function youtube() {
+  twitAndDeleteTempVideo();
+
+  // var youtube = google.youtube({
+  //   version: "v3",
+  //   auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
+  // });
+
+  // youtube.channels.list(
+  //   { part: "contentDetails", forUsername: "LenaDanya", maxResults: 50 },
+  //   function(err, response) {
+  //     getChannelId(
+  //       youtube,
+  //       response.data.items[0].contentDetails.relatedPlaylists.uploads
+  //     );
+  //   }
+  // );
+}
+
+async function getChannelId(youtube, playListId) {
+  youtube.playlistItems.list(
+    {
+      part: "snippet",
+      playlistId: playListId,
+      maxResults: 1
+    },
+    function(err, response) {
+      getMostPopularVideos(youtube, response.data.items[0].snippet.channelId);
     }
-  }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
+  );
+}
 
-  //retweet(twitsFound.retweet, retweetCount);
-  while (1) {
-    let twitsFound = await findTweets("#art", 1000);
-    await favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
-    // await comment(
-    //   twitsFound.comment,
-    //   commentedTweets,
-    //   commentLimit,
-    //   50000,
-    //   150000
-    // );
+async function getMostPopularVideos(youtube, channelId) {
+  youtube.search.list(
+    {
+      part: "snippet",
+      channelId,
+      maxResults: 50,
+      order: "viewCount"
+    },
+    function(err, response) {
+      uploadRandomVideo(response.data.items);
+    }
+  );
+}
+
+async function uploadRandomVideo(videosArr) {
+  let onlyVideosArr = videosArr.filter(item => {
+    if (item.id.kind == "youtube#video") return item;
+  });
+
+  let done = false;
+
+  while (!done) {
+    let randomVideo =
+      onlyVideosArr[Math.floor(Math.random() * onlyVideosArr.length)];
+
+    let response = await downloadVideo(randomVideo.id.videoId);
+    let video = {};
+    console.log(response);
+
+    if (response.success) {
+      video.path = response.path;
+      video.title = randomVideo.snippet.title;
+      await twitAndDeleteTempVideo(video);
+      done = true;
+    } else console.log("Error");
   }
+}
+
+async function downloadVideo(id) {
+  var video = youtubedl(
+    `http://www.youtube.com/watch?v=${id}`,
+    // Optional arguments passed to youtube-dl.
+    ["--format=18"],
+    // Additional options can be given for calling `child_process.execFile()`.
+    { cwd: __dirname }
+  );
+
+  const localname = `tempVideo-${Date.now()}`;
+
+  let response = new Promise((resolve, reject) => {
+    video.on("info", function(info) {
+      console.log("Checking video: ", info._filename);
+      if (info._duration_raw < 600) {
+        //10min
+        resolve({ success: true, path: `./temp/${localname}.mp4` });
+        // video.pipe(fs.createWriteStream(`./temp/${localname}.mp4`));
+        // return video.on("end", () => {
+        //   console.log("video ok");
+        //   resolve({ success: true, path: `./temp/${localname}.mp4` });
+        // });
+      } else {
+        console.log("video not ok");
+        console.log("Video duration: ", info._duration_raw);
+        resolve({ success: false });
+      }
+    });
+  });
+
+  return await response;
+}
+
+async function twitAndDeleteTempVideo(video) {
+  // step ONE
+  let promise = new Promise(async (resolve, reject) => {
+    const PATH = path.join(__dirname, "./ddd.mp4");
+
+    const res = await upload(PATH);
+    const mediaIdStr = res.media_id_string;
+    const meta_params = { media_id: mediaIdStr };
+
+    //  step TWO
+    client.post("media/metadata/create", meta_params, function(
+      err,
+      data,
+      response
+    ) {
+      if (!err) {
+        const params = { status: "fede", media_ids: [mediaIdStr] };
+        // step THREE
+        client.post("statuses/update", params, function(err, tweet, response) {
+          console.log("Video Tweeted!");
+          console.log(tweet);
+          //fs.unlinkSync(video.path); // Deletes media from /tmp folder
+          resolve();
+        }); // end '/statuses/update'
+      } // end if(!err)
+    }); // end '/media/metadata/create'
+  });
+
+  return await promise;
+}
+
+async function upload(file) {
+  return new Promise((resolve, reject) => {
+    return client.postMediaChunked({ file_path: file }, async function(
+      err,
+      data,
+      response
+    ) {
+      if (err) {
+        reject(err);
+      } else {
+        let { processing_info } = data;
+        let res;
+        while (
+          processing_info.state == "pending" ||
+          processing_info.state == "in_progress"
+        ) {
+          await delay(processing_info.check_after_secs * 1000);
+          res = await getNewStatus(data.media_id_string);
+          processing_info = res.processing_info;
+          console.log(processing_info);
+        }
+        resolve(res);
+      }
+    });
+  });
+}
+
+async function getNewStatus(mediaIdStr) {
+  return await new Promise((resolve, reject) => {
+    clientB.get(
+      "media/upload",
+      { command: "STATUS", media_id: mediaIdStr },
+      function(err, data, response) {
+        resolve(data);
+      }
+    );
+  });
+}
+
+function delay(ms) {
+  return new Promise((resolve, reject) => {
+    return setTimeout(() => {
+      console.log("Waiting ", ms);
+      resolve();
+    }, ms);
+  });
 }
 
 async function findTweets(keyword, limit) {
