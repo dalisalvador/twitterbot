@@ -21,6 +21,9 @@
     "body-parser": "^1.19.0",
     "ejs": "~1.0.0",
     "express": "~4.9.8",
+    "ffmpeg": "0.0.4",
+    "fluent-ffmpeg": "^2.1.2",
+    "googleapis": "^41.0.0",
     "install": "^0.13.0",
     "moment": "^2.24.0",
     "npm": "^6.10.0",
@@ -28,6 +31,8 @@
     "traverson": "^6.1.1",
     "traverson-hal": "^6.1.0",
     "twit": "^2.2.11",
-    "twitter-webhooks": "^0.3.0"
+    "twitter": "^1.7.1",
+    "twitter-webhooks": "^0.3.0",
+    "youtube-dl": "^2.0.0"
   }
 }
