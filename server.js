@@ -88,13 +88,26 @@ async function go() {
   //   }
   // }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
 
-  youtube();
-  keepAwake();
+  // youtube();
+  // keepAwake();
 
-  while (1) {
-    let twitsFound = await findTweets("#art", 1000);
-    await favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
-  }
+  // while (1) {
+  //   let twitsFound = await findTweets("#art", 1000);
+  //   await favorite(twitsFound.favorite, favCount, favLimit, 90000, 120000);
+  // }
+  ffmpeg("fede.mp4")
+    .setStartTime(0) //Can be in "HH:MM:SS" format also
+    .setDuration(10)
+    .on("error", function(err) {
+      console.log("error: ", +err);
+    })
+    .on("end", function(err) {
+      if (!err) {
+        console.log("Done!!");
+        resolve("fede2.mp4");
+      }
+    })
+    .saveToFile("fede2.mp4");
 }
 
 async function trimVideo(videoPath, start, end) {
