@@ -14,7 +14,6 @@ const { google } = require("googleapis");
 const youtubedl = require("youtube-dl");
 var ffmpeg = require("fluent-ffmpeg");
 var TwitterB = require("twitter");
-const configB = require("./configB.js");
 
 const clientID = "79abbea909cf4325223a",
   clientSecret = "f5502e776272b06294deb49206c3d743",
@@ -292,7 +291,12 @@ async function upload(file) {
 }
 
 async function getNewStatus(mediaIdStr) {
-  const clientB = new TwitterB(configB);
+  const clientB = new TwitterB({
+    consumer_key: process.env.TWITTER_CONSUMER_KEY,
+    consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+    access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
+    access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+  });
   return await new Promise((resolve, reject) => {
     clientB.get(
       "media/upload",
