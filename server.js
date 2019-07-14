@@ -73,9 +73,9 @@ async function go() {
   let favCount = 0,
     retweetCount = 0;
 
-  // let commentLimit = 500;
-  // let favLimit = 1000;
-  // let retweeLimit = 12;
+  let commentLimit = 500;
+  let favLimit = 1000;
+  let retweeLimit = 12;
 
   // setInterval(async () => {
   //   let artworks = await getRandomArtworks(500);
