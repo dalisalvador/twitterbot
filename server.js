@@ -79,16 +79,16 @@ async function go() {
   let favLimit = 1000;
   let retweeLimit = 12;
 
-  // setInterval(async () => {
-  //   let artworks = await getRandomArtworks(500);
-  //   let artworkData = await getArtworkData(artworks);
-  //   artist = await getArtistFromArtwork(artworkData.id);
+  setInterval(async () => {
+    let artworks = await getRandomArtworks(500);
+    let artworkData = await getArtworkData(artworks);
+    artist = await getArtistFromArtwork(artworkData.id);
 
-  //   if (artist[0] != undefined) {
-  //     artworkData.artist = artist[0].name;
-  //     await tweetArtwork(artworkData);
-  //   }
-  // }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
+    if (artist[0] != undefined) {
+      artworkData.artist = artist[0].name;
+      await tweetArtwork(artworkData);
+    }
+  }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
 
   youtube(["LenaDanya"], 14400000);
   keepAwake();
