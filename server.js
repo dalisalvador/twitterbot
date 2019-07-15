@@ -12,7 +12,9 @@ const path = require("path"); // part of Node, no npm install needed
 const promiseAllAlways = require("promise-all-always");
 const { google } = require("googleapis");
 const youtubedl = require("youtube-dl");
-var ffmpeg = require("fluent-ffmpeg");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const ffmpeg = require("fluent-ffmpeg");
+ffmpeg.setFfmpegPath(ffmpegPath);
 var TwitterB = require("twitter");
 
 const clientID = "79abbea909cf4325223a",
@@ -77,18 +79,18 @@ async function go() {
   let favLimit = 1000;
   let retweeLimit = 12;
 
-  // setInterval(async () => {
-  //   let artworks = await getRandomArtworks(500);
-  //   let artworkData = await getArtworkData(artworks);
-  //   artist = await getArtistFromArtwork(artworkData.id);
+  setInterval(async () => {
+    let artworks = await getRandomArtworks(500);
+    let artworkData = await getArtworkData(artworks);
+    artist = await getArtistFromArtwork(artworkData.id);
 
-  //   if (artist[0] != undefined) {
-  //     artworkData.artist = artist[0].name;
-  //     await tweetArtwork(artworkData);
-  //   }
-  // }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
+    if (artist[0] != undefined) {
+      artworkData.artist = artist[0].name;
+      await tweetArtwork(artworkData);
+    }
+  }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
 
-  youtube(14400000); //every 4hrs
+  youtube(["LenaDanya"], 14400000);
   keepAwake();
 
   while (1) {
@@ -116,14 +118,88 @@ async function trimVideo(videoPath, start, end) {
   });
 }
 
-async function youtube(interval) {
+async function downloadVideoAndAudio(videoData) {
+  const audio_path = `./temp/tempAudioOnly-${Date.now()}.m4a`;
+  const video_path = `./temp/tempVideoOnly-${Date.now()}.mp4`;
+
+  console.log("720p format available. Downloading audio and video");
+  await new Promise((resolve, reject) => {
+    axios({
+      url: videoData.audio_url,
+      responseType: "stream"
+    }).then(response => {
+      response.data
+        .pipe(fs.createWriteStream(audio_path))
+        .on("finish", () => resolve(audio_path))
+        .on("error", e => reject(e));
+    });
+  });
+
+  await new Promise((resolve, reject) => {
+    axios({
+      url: videoData.video_url,
+      responseType: "stream"
+    }).then(response => {
+      response.data
+        .pipe(fs.createWriteStream(video_path))
+        .on("finish", () => resolve(video_path))
+        .on("error", e => reject(e));
+    });
+  });
+
+  console.log("Done downloading.");
+  return await mergeAudioAndVideo(audio_path, video_path, videoData);
+}
+
+async function mergeAudioAndVideo(audio_path, video_path, videoData) {
+  console.log("Mergin video...");
+  const newPath = `./temp/tempMergedVideo-${Date.now()}.mp4`;
+  return new Promise((resolve, reject) => {
+    if (videoData.trim) {
+      ffmpeg(video_path)
+        .addInput(audio_path)
+        .setStartTime(0) //Can be in "HH:MM:SS" format also
+        .setDuration(140)
+        .on("error", function(err) {
+          reject(err);
+        })
+        .on("end", function(err) {
+          if (!err) {
+            console.log("Done mergin.");
+            fs.unlinkSync(audio_path); //remove old video and audio
+            fs.unlinkSync(video_path);
+            resolve(newPath);
+          }
+        })
+        .saveToFile(newPath);
+    } else {
+      ffmpeg(video_path)
+        .addInput(audio_path)
+        .on("error", function(err) {
+          reject(err);
+        })
+        .on("end", function(err) {
+          if (!err) {
+            console.log("Done mergin.");
+            fs.unlinkSync(audio_path); //remove old video and audio
+            fs.unlinkSync(video_path);
+            resolve(newPath);
+          }
+        })
+        .saveToFile(newPath);
+    }
+  });
+}
+
+async function youtube(users, ms) {
   setInterval(() => {
+    let user = users[Math.floor(Math.random() * users.length)];
     var youtube = google.youtube({
       version: "v3",
       auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
     });
     youtube.channels.list(
-      { part: "contentDetails", forUsername: "LenaDanya", maxResults: 50 },
+      { part: "contentDetails", forUsername: user, maxResults: 50 },
       function(err, response) {
         getChannelId(
           youtube,
@@ -131,7 +207,7 @@ async function youtube(interval) {
         );
       }
     );
-  }, interval);
+  }, ms);
 }
 
 async function getChannelId(youtube, playListId) {
@@ -152,7 +228,7 @@ async function getMostPopularVideos(youtube, channelId) {
     {
       part: "snippet",
       channelId,
-      maxResults: 50,
+      maxResults: 5,
       order: "viewCount"
     },
     function(err, response) {
@@ -174,8 +250,6 @@ async function uploadRandomVideo(videosArr) {
 
     let response = await downloadVideo(randomVideo.id.videoId);
     let video = {};
-    console.log(response);
-
     if (response.success) {
       video.path = response.path;
       video.title = randomVideo.snippet.title;
@@ -196,34 +270,58 @@ async function downloadVideo(id) {
     { cwd: __dirname }
   );
 
+  let videoData = {
+    trim: false
+  };
+
   const localname = `tempVideo-${Date.now()}`;
 
   let response = new Promise((resolve, reject) => {
-    video.on("info", function(info) {
+    video.on("info", async function(info) {
       console.log("Checking video: ", info._filename);
-      if (info._duration_raw > 140) {
-        //2:20 min
-        video.pipe(fs.createWriteStream(`./temp/${localname}.mp4`));
-        return video.on("end", async () => {
-          console.log("Video too long. Trimming");
-          let newPath = await trimVideo(`./temp/${localname}.mp4`, 0, 139);
-          resolve({
-            success: true,
-            path: newPath,
-            trim: true,
-            link: `http://www.youtube.com/watch?v=${id}`
-          });
+      if (info._duration_raw > 140) videoData.trim = true;
+      info.formats.map(video => {
+        if (video.ext == "mp4" && video.format_note == "720p")
+          videoData.video_url = video.url;
+        if (video.ext == "m4a") videoData.audio_url = video.url;
+      });
+
+      if (videoData.video_url != undefined) {
+        //720p format available
+        let newPath = await downloadVideoAndAudio(videoData);
+        resolve({
+          success: true,
+          path: newPath,
+          trim: true,
+          link: `http://www.youtube.com/watch?v=${id}`
         });
       } else {
-        video.pipe(fs.createWriteStream(`./temp/${localname}.mp4`));
-        return video.on("end", () => {
-          console.log("video ok");
-          resolve({
-            success: true,
-            path: `./temp/${localname}.mp4`,
-            trim: false
+        //720p format NOT available
+        console.log("720p format not available. Downloading lower quality");
+        if (videoData.trim) {
+          video.pipe(fs.createWriteStream(`./temp/${localname}.mp4`));
+          return video.on("end", async () => {
+            console.log("Download done. Video too long. Triming");
+            let newPath = await trimVideo(`./temp/${localname}.mp4`, 0, 139);
+            console.log("Done trimming.");
+            resolve({
+              success: true,
+              path: newPath,
+              trim: true,
+              link: `http://www.youtube.com/watch?v=${id}`
+            });
           });
-        });
+        } else {
+          video.pipe(fs.createWriteStream(`./temp/${localname}.mp4`));
+          return video.on("end", () => {
+            console.log("Download done. Video lengh ok");
+            resolve({
+              success: true,
+              path: `./temp/${localname}.mp4`,
+              trim: false
+            });
+          });
+        }
       }
     });
   });
@@ -345,7 +443,11 @@ async function findTweets(keyword, limit) {
         twitsFound.retweet.push(twit);
       else if (twit.favorite_count >= 30 && twit.retweet_count >= 2)
         twitsFound.comment.push(twit);
-      else if (twit.favorite_count >= 2 && twit.retweet_count >= 0)
+      else if (
+        twit.favorite_count >= 0 &&
+        twit.retweet_count >= 0 &&
+        twit.user.followers_count <= 100
+      )
         twitsFound.favorite.push(twit);
     } else {
       //It's a RT
