@@ -88,7 +88,7 @@ async function go() {
   //   }
   // }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
 
-  youtube();
+  youtube(14400000); //every 4hrs
   keepAwake();
 
   while (1) {
@@ -116,20 +116,22 @@ async function trimVideo(videoPath, start, end) {
   });
 }
 
-async function youtube() {
-  var youtube = google.youtube({
-    version: "v3",
-    auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
-  });
-  youtube.channels.list(
-    { part: "contentDetails", forUsername: "LenaDanya", maxResults: 50 },
-    function(err, response) {
-      getChannelId(
-        youtube,
-        response.data.items[0].contentDetails.relatedPlaylists.uploads
-      );
-    }
-  );
+async function youtube(interval) {
+  setInterval(() => {
+    var youtube = google.youtube({
+      version: "v3",
+      auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
+    });
+    youtube.channels.list(
+      { part: "contentDetails", forUsername: "LenaDanya", maxResults: 50 },
+      function(err, response) {
+        getChannelId(
+          youtube,
+          response.data.items[0].contentDetails.relatedPlaylists.uploads
+        );
+      }
+    );
+  }, interval);
 }
 
 async function getChannelId(youtube, playListId) {
