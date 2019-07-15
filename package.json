@@ -31,7 +31,7 @@
     "promise-all-always": "^1.0.3",
     "traverson": "^6.1.1",
     "traverson-hal": "^6.1.0",
-    "twit": "^2.2.11",
+    "twit": "github:dalisalvador/twit",
     "twitter": "^1.7.1",
     "twitter-webhooks": "^0.3.0",
     "youtube-dl": "^2.0.0"

@@ -192,6 +192,20 @@ async function mergeAudioAndVideo(audio_path, video_path, videoData) {
 }
 
 async function youtube(users, ms) {
+  let user = users[Math.floor(Math.random() * users.length)];
+  var youtube = google.youtube({
+    version: "v3",
+    auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
+  });
+  youtube.channels.list(
+    { part: "contentDetails", forUsername: user, maxResults: 50 },
+    function(err, response) {
+      getChannelId(
+        youtube,
+        response.data.items[0].contentDetails.relatedPlaylists.uploads
+      );
+    }
+  );
   setInterval(() => {
     let user = users[Math.floor(Math.random() * users.length)];
     var youtube = google.youtube({
