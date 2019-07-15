@@ -88,7 +88,7 @@ async function go() {
   //   }
   // }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
 
-  youtube();
+  youtube(["LenaDanya"], 14400000);
   keepAwake();
 
   while (1) {
@@ -116,20 +116,23 @@ async function trimVideo(videoPath, start, end) {
   });
 }
 
-async function youtube() {
-  var youtube = google.youtube({
-    version: "v3",
-    auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
-  });
-  youtube.channels.list(
-    { part: "contentDetails", forUsername: "LenaDanya", maxResults: 50 },
-    function(err, response) {
-      getChannelId(
-        youtube,
-        response.data.items[0].contentDetails.relatedPlaylists.uploads
-      );
-    }
-  );
+async function youtube(users, ms) {
+  setInterval(() => {
+    let user = users[Math.floor(Math.random() * users.length)];
+    var youtube = google.youtube({
+      version: "v3",
+      auth: "AIzaSyDLhMU6pXkaHxLaB9IzAFUDK_eiQcosue0"
+    });
+    youtube.channels.list(
+      { part: "contentDetails", forUsername: user, maxResults: 50 },
+      function(err, response) {
+        getChannelId(
+          youtube,
+          response.data.items[0].contentDetails.relatedPlaylists.uploads
+        );
+      }
+    );
+  }, ms);
 }
 
 async function getChannelId(youtube, playListId) {
@@ -172,8 +175,6 @@ async function uploadRandomVideo(videosArr) {
 
     let response = await downloadVideo(randomVideo.id.videoId);
     let video = {};
-    console.log(response);
-
     if (response.success) {
       video.path = response.path;
       video.title = randomVideo.snippet.title;
@@ -343,7 +344,11 @@ async function findTweets(keyword, limit) {
         twitsFound.retweet.push(twit);
       else if (twit.favorite_count >= 30 && twit.retweet_count >= 2)
         twitsFound.comment.push(twit);
-      else if (twit.favorite_count >= 2 && twit.retweet_count >= 0)
+      else if (
+        twit.favorite_count >= 0 &&
+        twit.retweet_count >= 0 &&
+        twit.user.followers_count <= 100
+      )
         twitsFound.favorite.push(twit);
     } else {
       //It's a RT
