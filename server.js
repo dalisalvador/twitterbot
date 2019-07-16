@@ -242,7 +242,7 @@ async function getMostPopularVideos(youtube, channelId) {
     {
       part: "snippet",
       channelId,
-      maxResults: 5,
+      maxResults: 50,
       order: "viewCount"
     },
     function(err, response) {
@@ -495,11 +495,10 @@ async function favorite(twits, favCount, favLimit, minInterval, maxInterval) {
         Math.floor(
           Math.random() * (maxInterval - minInterval + 1) + minInterval
         );
-
-      return setTimeout(() => {
-        if (favCount >= favLimit) {
-          reject("Error: Fav Limit reached. Skipping");
-        } else {
+      if (favCount >= favLimit) {
+        reject("Error: Fav Limit reached. Skipping");
+      } else {
+        return setTimeout(() => {
           client.post("favorites/create", { id: twit.id_str }, (err, res) => {
             if (err) reject(err);
             else {
@@ -507,8 +506,8 @@ async function favorite(twits, favCount, favLimit, minInterval, maxInterval) {
               resolve(favCount);
             }
           });
-        }
-      }, ms);
+        }, ms);
+      }
     });
   });
 
