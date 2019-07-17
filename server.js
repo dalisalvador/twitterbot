@@ -90,7 +90,10 @@ async function go() {
     }
   }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
 
-  youtube(["FineArtEBooks", "theartassignment", "MoMAvideos", "smarthistoryvideos"], 14400000);
+  youtube(
+    ["FineArtEBooks", "theartassignment", "MoMAvideos", "smarthistoryvideos"],
+    14400000
+  );
   keepAwake();
 
   while (1) {
