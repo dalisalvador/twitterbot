@@ -89,6 +89,7 @@ async function go() {
       await tweetArtwork(artworkData);
     }
   }, Math.floor(Math.random() * (10800000 - 3600000 + 1) + 3600000));
+  //Videos
 
   youtube(
     ["FineArtEBooks", "theartassignment", "MoMAvideos", "smarthistoryvideos"],
