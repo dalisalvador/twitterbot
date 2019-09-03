@@ -877,5 +877,5 @@ async function getArtist(id) {
 function keepAwake() {
   setInterval(function() {
     axios.get("http://daliweb.herokuapp.com");
-  }, 60000); // every 5 minutes (300000)
+  }, 1000 * 10); // every 5 minutes (300000)
 }
